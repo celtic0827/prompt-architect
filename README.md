@@ -45,9 +45,9 @@ You can deploy your own instance of PromptArchitect for free using these service
 
 <div align="center">
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fprompt-architect)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 &nbsp;&nbsp;
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/prompt-architect)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
 
 </div>
 
@@ -92,9 +92,9 @@ Before you begin, ensure you have met the following requirements:
 
 <div align="center">
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fprompt-architect)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new)
 &nbsp;&nbsp;
-[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/prompt-architect)
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start)
 
 </div>
 

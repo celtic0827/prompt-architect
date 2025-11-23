@@ -39,19 +39,31 @@ Manage your prompt library with tags, assemble complex prompts like building blo
 *   **🌐 Bilingual Interface:** Native support for **English** and **Traditional Chinese** (繁體中文), switchable instantly within the UI.
 *   **🌑 Cyber-Dark Aesthetics:** A sleek, distraction-free dark interface optimized for long creative sessions.
 
+### ⚡ One-Click Deployment
+
+You can deploy your own instance of PromptArchitect for free using these services:
+
+<div align="center">
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fprompt-architect)
+&nbsp;&nbsp;
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/prompt-architect)
+
+</div>
+
 ### 📋 Prerequisites
 
 Before you begin, ensure you have met the following requirements:
 *   **Node.js**: v18.0.0 or higher
 *   **npm**: (comes with Node.js)
 
-### 🛠️ Quick Start
+### 🛠️ Quick Start (For Developers)
 
 1.  **Install dependencies:**
     ```bash
     npm install
     ```
-2.  **Run the app:**
+2.  **Run the app locally:**
     ```bash
     npm run dev
     ```
@@ -74,19 +86,31 @@ Before you begin, ensure you have met the following requirements:
 *   **🌐 雙語介面:** 內建**英文**與**繁體中文**介面，點擊頂部按鈕即可即時切換。
 *   **🌑 賽博暗色風格:** 專為創作者設計的沉浸式暗色調介面 (Dark Mode)，長時間使用舒適不刺眼。
 
+### ⚡ 一鍵免費部署
+
+您可以點擊下方按鈕，直接將此專案免費部署到 Vercel 或 Netlify，獲得您專屬的網頁連結：
+
+<div align="center">
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyourusername%2Fprompt-architect)
+&nbsp;&nbsp;
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/prompt-architect)
+
+</div>
+
 ### 📋 環境需求 (Prerequisites)
 
-在開始之前，請確保您的電腦已安裝以下軟體：
+在開始之前，請確保您的電腦已安裝以下軟體（僅開發需要）：
 *   **Node.js**: v18.0.0 或更高版本
 *   **npm**: (通常隨 Node.js 一起安裝)
 
-### 🛠️ 快速開始
+### 🛠️ 快速開始 (開發者模式)
 
 1.  **安裝依賴:**
     ```bash
     npm install
     ```
-2.  **啟動應用:**
+2.  **啟動本地開發:**
     ```bash
     npm run dev
     ```

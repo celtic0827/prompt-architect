@@ -23,6 +23,10 @@
     "typescript": "^5.5.3",
     "vite": "^5.4.1"
   },
+  "overrides": {
+    "react": "$react",
+    "react-dom": "$react-dom"
+  },
   "engines": {
     "node": ">=18.0.0"
   }

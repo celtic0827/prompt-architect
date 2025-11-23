@@ -14,6 +14,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&style=flat-square)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&style=flat-square)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css&style=flat-square)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?logo=node.js&style=flat-square)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
 [**English**](#-english-introduction) | [**繁體中文**](#-繁體中文介紹)
@@ -37,6 +38,12 @@ Manage your prompt library with tags, assemble complex prompts like building blo
 *   **💾 Data Portability:** Full support for **CSV Import/Export**. Backup your library or share curated prompt packs with the community.
 *   **🌐 Bilingual Interface:** Native support for **English** and **Traditional Chinese** (繁體中文), switchable instantly within the UI.
 *   **🌑 Cyber-Dark Aesthetics:** A sleek, distraction-free dark interface optimized for long creative sessions.
+
+### 📋 Prerequisites
+
+Before you begin, ensure you have met the following requirements:
+*   **Node.js**: v18.0.0 or higher
+*   **npm**: (comes with Node.js)
 
 ### 🛠️ Quick Start
 
@@ -66,6 +73,12 @@ Manage your prompt library with tags, assemble complex prompts like building blo
 *   **💾 數據導入導出:** 完整支援 **CSV 格式導入與導出**。輕鬆備份您的資料庫，或與社群分享您的專屬提示詞包。
 *   **🌐 雙語介面:** 內建**英文**與**繁體中文**介面，點擊頂部按鈕即可即時切換。
 *   **🌑 賽博暗色風格:** 專為創作者設計的沉浸式暗色調介面 (Dark Mode)，長時間使用舒適不刺眼。
+
+### 📋 環境需求 (Prerequisites)
+
+在開始之前，請確保您的電腦已安裝以下軟體：
+*   **Node.js**: v18.0.0 或更高版本
+*   **npm**: (通常隨 Node.js 一起安裝)
 
 ### 🛠️ 快速開始
 

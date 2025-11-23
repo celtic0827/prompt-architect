@@ -1,7 +1,7 @@
 # PromptArchitect
 
 <div align="center">
-<img width="100%" alt="PromptArchitect Interface" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+<img width="100%" alt="PromptArchitect Interface" src="https://upload.cc/i1/2025/11/24/jnMcqr.jpg" />
 
 <br/>
 

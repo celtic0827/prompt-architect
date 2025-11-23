@@ -20,8 +20,35 @@ import { PromptBlock, BuilderBlock } from './types';
 import { DEFAULT_PROMPTS } from './constants';
 import { TRANSLATIONS, Language } from './translations';
 
+const STORAGE_KEYS = {
+  BLOCKS: 'prompt-architect-blocks',
+  TAGS: 'prompt-architect-tags'
+};
+
 const App: React.FC = () => {
-  const [libraryBlocks, setLibraryBlocks] = useState<PromptBlock[]>(DEFAULT_PROMPTS);
+  // Initialize from LocalStorage or use defaults
+  const [libraryBlocks, setLibraryBlocks] = useState<PromptBlock[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.BLOCKS);
+      return saved ? JSON.parse(saved) : DEFAULT_PROMPTS;
+    } catch (e) {
+      console.error("Failed to load blocks from storage", e);
+      return DEFAULT_PROMPTS;
+    }
+  });
+
+  // Initialize Tag Order from LocalStorage or use defaults
+  const [tagOrder, setTagOrder] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.TAGS);
+      // Ensure we have a sensible default if storage is empty
+      const defaultTags = ['Subject', 'Style', 'View', 'Lighting', 'Quality'];
+      return saved ? JSON.parse(saved) : defaultTags;
+    } catch (e) {
+      return ['Subject', 'Style', 'View', 'Lighting', 'Quality'];
+    }
+  });
+
   const [builderBlocks, setBuilderBlocks] = useState<BuilderBlock[]>([]);
   const [activeDragItem, setActiveDragItem] = useState<PromptBlock | null>(null);
   
@@ -29,11 +56,24 @@ const App: React.FC = () => {
   const [language, setLanguage] = useState<Language>('en');
   const t = TRANSLATIONS[language];
 
-  // Tag order state management
-  // Initialize with a logical order for optimal "Auto" generation results
-  const [tagOrder, setTagOrder] = useState<string[]>(['Subject', 'Style', 'View', 'Lighting', 'Quality']);
+  // Persistence Effects
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.BLOCKS, JSON.stringify(libraryBlocks));
+    } catch (e) {
+      console.error("Failed to save blocks", e);
+    }
+  }, [libraryBlocks]);
 
-  // Sync tagOrder with blocks whenever libraryBlocks changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.TAGS, JSON.stringify(tagOrder));
+    } catch (e) {
+      console.error("Failed to save tag order", e);
+    }
+  }, [tagOrder]);
+
+  // Sync tagOrder with blocks whenever libraryBlocks changes (add new tags found in blocks)
   useEffect(() => {
     setTagOrder(prevOrder => {
       const currentUniqueTags = Array.from(new Set(libraryBlocks.map(b => b.tag))).sort();

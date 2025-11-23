@@ -5,6 +5,12 @@
 
 <br/>
 
+<!-- Live Demo Button -->
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo_線上試用-Click_Here-10b981?style=for-the-badge&logo=google-chrome&logoColor=white)](https://ai.studio/apps/drive/10hjIwyu56UXgHsC7PKO1ADE2iY4FVIrB)
+
+<br/>
+<br/>
+
 [![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&style=flat-square)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&style=flat-square)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css&style=flat-square)](https://tailwindcss.com/)

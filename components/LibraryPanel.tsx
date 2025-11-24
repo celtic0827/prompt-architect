@@ -1,9 +1,10 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X } from 'lucide-react';
+import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X, AlertTriangle, FileInput, CopyPlus, Replace } from 'lucide-react';
 import { PromptBlock } from '../types';
 import { exportToCSV, parseCSV } from '../utils/csvHelper';
 import { Language, TRANSLATIONS } from '../translations';
@@ -54,6 +55,9 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({ name: '', tag: '', content: '' });
 
+  // Import Modal State
+  const [pendingImport, setPendingImport] = useState<PromptBlock[] | null>(null);
+
   useEffect(() => {
     if (highlightedBlockId) {
       const timer = setTimeout(() => {
@@ -74,6 +78,13 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
       return matchesSearch && matchesTag;
     });
   }, [blocks, searchTerm, activeTag]);
+
+  // Duplicate count calculation
+  const duplicateCount = useMemo(() => {
+    if (!pendingImport) return 0;
+    const existingNames = new Set(blocks.map(b => b.name));
+    return pendingImport.filter(b => existingNames.has(b.name)).length;
+  }, [pendingImport, blocks]);
 
   const handleAddBlock = () => {
     if (!newName || !newContent) return;
@@ -126,10 +137,24 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
       const text = evt.target?.result as string;
       const parsed = parseCSV(text);
       const newBlocks = parsed.map(p => ({ ...p, id: crypto.randomUUID() }));
-      setBlocks(prev => [...prev, ...newBlocks]);
+      setPendingImport(newBlocks);
     };
     reader.readAsText(file);
     e.target.value = '';
+  };
+
+  const handleImportAppend = () => {
+    if (pendingImport) {
+        setBlocks(prev => [...prev, ...pendingImport]);
+        setPendingImport(null);
+    }
+  };
+
+  const handleImportOverwrite = () => {
+    if (pendingImport) {
+        setBlocks(pendingImport);
+        setPendingImport(null);
+    }
   };
 
   const toggleManageMode = () => {
@@ -327,6 +352,65 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
           </div>
         )}
       </div>
+
+      {/* Import Options Modal */}
+      {pendingImport && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={() => setPendingImport(null)} />
+            <div className="relative bg-zinc-900 border border-zinc-700 rounded-xl shadow-2xl max-w-md w-full p-6 space-y-6">
+                <div className="flex items-center gap-3 border-b border-zinc-800 pb-4">
+                    <FileInput className="w-6 h-6 text-indigo-500" />
+                    <h3 className="text-lg font-bold text-white">{t.importOptions}</h3>
+                </div>
+                
+                <div className="space-y-3">
+                    <p className="text-zinc-300">
+                        {t.foundBlocks.replace('{n}', pendingImport.length.toString())}
+                    </p>
+                    {duplicateCount > 0 && (
+                        <div className="flex items-start gap-2 p-3 bg-yellow-900/20 border border-yellow-700/50 rounded-lg">
+                            <AlertTriangle className="w-5 h-5 text-yellow-500 shrink-0" />
+                            <p className="text-sm text-yellow-200">
+                                {t.duplicatesFound.replace('{n}', duplicateCount.toString())}
+                            </p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="space-y-3 pt-2">
+                    <button 
+                        onClick={handleImportAppend}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg transition-colors border border-zinc-700 hover:border-indigo-500 group"
+                    >
+                        <CopyPlus className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300" />
+                        <div className="flex flex-col items-start">
+                            <span className="text-sm font-bold">{t.append}</span>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={handleImportOverwrite}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-red-950/30 hover:bg-red-900/50 text-red-200 rounded-lg transition-colors border border-red-900/50 hover:border-red-500 group"
+                    >
+                        <Replace className="w-4 h-4 text-red-400" />
+                        <div className="flex flex-col items-start text-left">
+                            <span className="text-sm font-bold">{t.overwrite}</span>
+                            <span className="text-[10px] opacity-70">{t.overwriteWarning}</span>
+                        </div>
+                    </button>
+
+                    <button 
+                        onClick={() => setPendingImport(null)}
+                        className="w-full px-4 py-2 text-zinc-500 hover:text-zinc-300 text-sm transition-colors"
+                    >
+                        {t.cancel}
+                    </button>
+                </div>
+            </div>
+        </div>,
+        document.body
+      )}
+
     </div>
   );
 };

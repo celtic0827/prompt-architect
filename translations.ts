@@ -45,7 +45,16 @@ export const TRANSLATIONS = {
     // Undo / Toast
     deleted: "Deleted.",
     undo: "Undo",
-    restored: "Restored."
+    restored: "Restored.",
+
+    // Import Options
+    importOptions: "Import Options",
+    foundBlocks: "Found {n} blocks in CSV.",
+    duplicatesFound: "Note: {n} blocks have duplicate names with your current library.",
+    append: "Append",
+    overwrite: "Overwrite",
+    cancel: "Cancel",
+    overwriteWarning: "This will delete all current blocks!"
   },
   zh: {
     library: "提示詞庫",
@@ -90,6 +99,15 @@ export const TRANSLATIONS = {
     // Undo / Toast
     deleted: "已刪除。",
     undo: "復原",
-    restored: "已復原。"
+    restored: "已復原。",
+
+    // Import Options
+    importOptions: "匯入選項",
+    foundBlocks: "在 CSV 中找到 {n} 個區塊。",
+    duplicatesFound: "注意：其中有 {n} 筆區塊名稱與現有資料庫重複。",
+    append: "追加",
+    overwrite: "覆蓋",
+    cancel: "取消",
+    overwriteWarning: "警告：這將會清空目前所有的區塊！"
   }
 };

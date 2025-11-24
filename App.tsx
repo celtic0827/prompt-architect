@@ -8,14 +8,15 @@ import {
   DragOverEvent,
   useSensor, 
   useSensors, 
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   closestCenter,
   defaultDropAnimationSideEffects,
   DropAnimation,
   useDroppable
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
-import { Undo2 } from 'lucide-react';
+import { Undo2, Library, Layers } from 'lucide-react';
 import { LibraryPanel } from './components/LibraryPanel';
 import { BuilderPanel } from './components/BuilderPanel';
 import { PromptBlock, BuilderBlock } from './types';
@@ -62,6 +63,9 @@ const App: React.FC = () => {
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [highlightedLibraryId, setHighlightedLibraryId] = useState<string | null>(null);
 
+  // Mobile Tab State ('library' or 'builder')
+  const [activeMobileTab, setActiveMobileTab] = useState<'library' | 'builder'>('library');
+
   // Language State
   const [language, setLanguage] = useState<Language>('en');
   const t = TRANSLATIONS[language];
@@ -105,10 +109,17 @@ const App: React.FC = () => {
     return new Set(builderBlocks.map(b => b.id));
   }, [builderBlocks]);
 
+  // Sensors config: Separating Mouse and Touch to enable better mobile scrolling vs dragging
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    useSensor(MouseSensor, {
       activationConstraint: {
-        distance: 5,
+        distance: 10, // Require slight movement to start drag
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250, // Press and hold for 250ms to drag on mobile
+        tolerance: 5, // Allow slight movement during hold
       },
     })
   );
@@ -159,6 +170,24 @@ const App: React.FC = () => {
     setBuilderBlocks([]);
   };
 
+  // --- Direct Add Handler (For Mobile Tap or "+" Button) ---
+  const handleDirectAddToBuilder = (block: PromptBlock) => {
+     // Check for duplicate ID if strictly enforcing single use, 
+     // but Builder usually allows duplicates (instances).
+     // However, Library highlighting logic assumes we know if it's used.
+     // Let's allow duplicates in builder, but maybe visual feedback is enough.
+     
+     const newBlock: BuilderBlock = {
+       ...block,
+       instanceId: `${block.id}-${Date.now()}`
+     };
+     setBuilderBlocks(prev => [...prev, newBlock]);
+     
+     // Optional: Feedback or switch tab on mobile? 
+     // Let's keep user in library so they can add more, but maybe flash a toast?
+     // For now, no auto-switch, allows rapid adding.
+  };
+
   // --- Drag Handlers ---
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -194,8 +223,9 @@ const App: React.FC = () => {
 
     if (isLibraryItem && isOverBuilderContext) {
        const block = active.data.current?.block as PromptBlock;
-       if (builderBlocks.some(b => b.id === block.id)) return;
-
+       // Prevent duplicates if desired, or allow instances. 
+       // Current logic allows instances.
+       
        const newBlock: BuilderBlock = {
          ...block,
          instanceId: `${block.id}-${Date.now()}`
@@ -223,8 +253,6 @@ const App: React.FC = () => {
   };
 
   const handleAutoGenerate = () => {
-    // Snapshot current builder state before auto-gen? 
-    // Usually 'Auto' is destructive, let's treat it like a Clear+Add, so we save state.
     triggerToast(t.auto, { type: 'builder', data: [...builderBlocks] });
     
     const newBlocks: BuilderBlock[] = [];
@@ -244,6 +272,12 @@ const App: React.FC = () => {
   const handleBuilderBlockClick = (originalId: string, tag: string) => {
     setActiveTag(tag);
     setHighlightedLibraryId(originalId);
+    
+    // On Mobile, switch to Library tab to show the highlight
+    if (window.innerWidth < 768) {
+        setActiveMobileTab('library');
+    }
+
     setTimeout(() => {
         setHighlightedLibraryId(null);
     }, 1000);
@@ -265,9 +299,14 @@ const App: React.FC = () => {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-black text-zinc-100 overflow-hidden font-sans relative">
+      {/* Main Layout: Flex Col on Mobile, Flex Row on Desktop */}
+      <div className="flex flex-col md:flex-row h-screen bg-black text-zinc-100 overflow-hidden font-sans relative">
+        
         {/* Left Panel: Library */}
-        <div className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 relative z-20 shadow-2xl">
+        <div className={`
+            w-full md:w-[400px] lg:w-[450px] flex-shrink-0 relative z-20 shadow-2xl bg-zinc-900 border-r border-zinc-800
+            ${activeMobileTab === 'library' ? 'flex-1 flex overflow-hidden' : 'hidden md:flex'}
+        `}>
           <LibraryPanel 
             blocks={libraryBlocks} 
             setBlocks={setLibraryBlocks} 
@@ -281,11 +320,15 @@ const App: React.FC = () => {
             highlightedBlockId={highlightedLibraryId}
             onDeleteBlock={handleDeleteLibraryBlock}
             onBulkDeleteBlocks={handleBulkDeleteLibraryBlocks}
+            onAddToBuilder={handleDirectAddToBuilder}
           />
         </div>
 
         {/* Right Panel: Builder Area */}
-        <div className="flex-1 relative z-10 min-w-0">
+        <div className={`
+            flex-1 relative z-10 min-w-0
+            ${activeMobileTab === 'builder' ? 'flex-1 flex overflow-hidden' : 'hidden md:flex'}
+        `}>
           <BuilderDropArea 
             blocks={builderBlocks} 
             setBlocks={setBuilderBlocks} 
@@ -298,8 +341,34 @@ const App: React.FC = () => {
           />
         </div>
 
+        {/* Mobile Bottom Navigation Bar */}
+        <div className="md:hidden flex-shrink-0 h-16 bg-zinc-950 border-t border-zinc-800 flex items-center justify-around z-50 safe-area-bottom">
+           <button 
+             onClick={() => setActiveMobileTab('library')}
+             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeMobileTab === 'library' ? 'text-indigo-400' : 'text-zinc-500'}`}
+           >
+             <Library className="w-5 h-5" />
+             <span className="text-[10px] font-medium">{t.library}</span>
+           </button>
+           
+           <button 
+             onClick={() => setActiveMobileTab('builder')}
+             className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${activeMobileTab === 'builder' ? 'text-indigo-400' : 'text-zinc-500'}`}
+           >
+             <div className="relative">
+                <Layers className="w-5 h-5" />
+                {builderBlocks.length > 0 && (
+                    <span className="absolute -top-1.5 -right-2 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] h-[14px] flex items-center justify-center">
+                        {builderBlocks.length}
+                    </span>
+                )}
+             </div>
+             <span className="text-[10px] font-medium">{t.promptBuilder}</span>
+           </button>
+        </div>
+
         {/* Toast Notification */}
-        <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+        <div className={`fixed bottom-20 md:bottom-6 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
           <div className="bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-4 min-w-[300px] justify-between">
             <span className="text-sm font-medium">{toastMessage}</span>
             <button 
@@ -342,7 +411,7 @@ const BuilderDropArea = (props: {
   });
 
   return (
-    <div ref={setDropRef} className="h-full">
+    <div ref={setDropRef} className="h-full flex flex-col">
       <BuilderPanel {...props} />
     </div>
   )

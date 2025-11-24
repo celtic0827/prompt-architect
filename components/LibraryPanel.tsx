@@ -4,7 +4,7 @@ import { createPortal } from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X, AlertTriangle, FileInput, CopyPlus, Replace } from 'lucide-react';
+import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X, AlertTriangle, FileInput, CopyPlus, Replace, ChevronRight } from 'lucide-react';
 import { PromptBlock } from '../types';
 import { exportToCSV, parseCSV } from '../utils/csvHelper';
 import { Language, TRANSLATIONS } from '../translations';
@@ -20,9 +20,9 @@ interface LibraryPanelProps {
   activeTag: string | null;
   setActiveTag: (tag: string | null) => void;
   highlightedBlockId: string | null;
-  // New Delete Handlers
   onDeleteBlock: (id: string) => void;
   onBulkDeleteBlocks: (ids: Set<string>) => void;
+  onAddToBuilder: (block: PromptBlock) => void;
 }
 
 export const LibraryPanel: React.FC<LibraryPanelProps> = ({ 
@@ -37,7 +37,8 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   setActiveTag,
   highlightedBlockId,
   onDeleteBlock,
-  onBulkDeleteBlocks
+  onBulkDeleteBlocks,
+  onAddToBuilder
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -176,18 +177,15 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
 
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    // Call app-level handler for Undo support
     onBulkDeleteBlocks(selectedIds);
-    
-    // Clear selection and mode
     setSelectedIds(new Set());
     setIsManageMode(false);
   };
 
   return (
-    <div className="flex flex-col h-full bg-zinc-900 border-r border-zinc-800">
+    <div className="flex flex-col h-full bg-zinc-900 md:border-r border-zinc-800 w-full">
       {/* Header & Tools */}
-      <div className="p-4 border-b border-zinc-800 space-y-4">
+      <div className="p-4 border-b border-zinc-800 space-y-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
             <Tag className="w-5 h-5 text-indigo-500" />
@@ -326,7 +324,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
       </div>
 
       {/* Draggable List */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin">
+      <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-thin pb-20 md:pb-4">
         {filteredBlocks.map(block => (
           <DraggableLibraryItem 
             key={block.id} 
@@ -344,6 +342,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
             editData={editFormData}
             setEditData={setEditFormData}
             availableTags={tags}
+            onAddToBuilder={() => onAddToBuilder(block)}
           />
         ))}
         {filteredBlocks.length === 0 && (
@@ -478,6 +477,7 @@ interface DraggableLibraryItemProps {
   editData: { name: string; tag: string; content: string };
   setEditData: React.Dispatch<React.SetStateAction<{ name: string; tag: string; content: string }>>;
   availableTags: string[];
+  onAddToBuilder: () => void;
 }
 
 const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({ 
@@ -494,7 +494,8 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
   onSaveEdit,
   editData,
   setEditData,
-  availableTags
+  availableTags,
+  onAddToBuilder
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `lib-${block.id}`,
@@ -603,25 +604,50 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
                 {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
              </div>
         ) : (
-            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
-                <button 
-                onClick={(e) => onStartEdit(block, e)}
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="p-1 text-zinc-500 hover:text-indigo-400 transition-colors mr-0.5"
-                title="Edit"
+            <div className="flex items-center shrink-0">
+                {/* Mobile Add Button */}
+                <button
+                    onClick={(e) => { e.stopPropagation(); onAddToBuilder(); }}
+                    className="md:hidden p-1.5 text-emerald-500 hover:bg-emerald-900/20 rounded mr-1"
                 >
-                <Pencil className="w-3.5 h-3.5" />
+                    <Plus className="w-4 h-4" />
                 </button>
-                <button 
-                onClick={(e) => onDelete(block.id, e)}
-                onPointerDown={(e) => e.stopPropagation()}
-                onMouseDown={(e) => e.stopPropagation()}
-                className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
-                title="Delete"
-                >
-                <Trash2 className="w-3.5 h-3.5" />
-                </button>
+
+                <div className="hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                    <button 
+                    onClick={(e) => onStartEdit(block, e)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="p-1 text-zinc-500 hover:text-indigo-400 transition-colors mr-0.5"
+                    title="Edit"
+                    >
+                    <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button 
+                    onClick={(e) => onDelete(block.id, e)}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                    title="Delete"
+                    >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+                {/* Mobile visible action buttons (always visible since drag is limited) */}
+                 <div className="md:hidden flex items-center ml-1">
+                    <button 
+                    onClick={(e) => onStartEdit(block, e)}
+                    className="p-1 text-zinc-500"
+                    >
+                    <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                     <button 
+                    onClick={(e) => onDelete(block.id, e)}
+                    className="p-1 text-zinc-500"
+                    >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                </div>
             </div>
         )}
       </div>
@@ -630,7 +656,7 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
       </p>
       
       {!isManageMode && (
-        <div className="absolute top-1/2 -translate-y-1/2 left-0 -ml-2 opacity-0 group-hover:opacity-100 text-zinc-600">
+        <div className="hidden md:block absolute top-1/2 -translate-y-1/2 left-0 -ml-2 opacity-0 group-hover:opacity-100 text-zinc-600">
             <GripVertical className="w-4 h-4" />
         </div>
       )}

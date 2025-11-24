@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, X, CheckSquare, Languages } from 'lucide-react';
+import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X } from 'lucide-react';
 import { PromptBlock } from '../types';
 import { exportToCSV, parseCSV } from '../utils/csvHelper';
 import { Language, TRANSLATIONS } from '../translations';
@@ -15,6 +15,10 @@ interface LibraryPanelProps {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: typeof TRANSLATIONS.en;
+  // Lifted props
+  activeTag: string | null;
+  setActiveTag: (tag: string | null) => void;
+  highlightedBlockId: string | null;
 }
 
 export const LibraryPanel: React.FC<LibraryPanelProps> = ({ 
@@ -24,10 +28,12 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   usedBlockIds,
   language,
   setLanguage,
-  t
+  t,
+  activeTag,
+  setActiveTag,
+  highlightedBlockId
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [activeTag, setActiveTag] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   
   // Management Mode State
@@ -38,6 +44,23 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   const [newName, setNewName] = useState('');
   const [newTag, setNewTag] = useState('');
   const [newContent, setNewContent] = useState('');
+
+  // Editing State
+  const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState({ name: '', tag: '', content: '' });
+
+  // Scroll to highlighted block when ID changes
+  useEffect(() => {
+    if (highlightedBlockId) {
+      const timer = setTimeout(() => {
+        const element = document.getElementById(`lib-item-${highlightedBlockId}`);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedBlockId, activeTag]);
 
   const filteredBlocks = useMemo(() => {
     return blocks.filter(block => {
@@ -70,6 +93,30 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
     }
   };
 
+  const handleStartEdit = (block: PromptBlock, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingBlockId(block.id);
+    setEditFormData({ name: block.name, tag: block.tag, content: block.content });
+    // Disable drag while editing happens in the component below
+  };
+
+  const handleCancelEdit = () => {
+    setEditingBlockId(null);
+    setEditFormData({ name: '', tag: '', content: '' });
+  };
+
+  const handleSaveEdit = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (editingBlockId) {
+      setBlocks(prev => prev.map(b => 
+        b.id === editingBlockId 
+          ? { ...b, name: editFormData.name, tag: editFormData.tag, content: editFormData.content } 
+          : b
+      ));
+      setEditingBlockId(null);
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -89,6 +136,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
     setIsManageMode(!isManageMode);
     setSelectedIds(new Set()); // Clear selections when toggling
     setShowAddForm(false);
+    setEditingBlockId(null); // Clear edit mode if active
   };
 
   const toggleSelection = (id: string) => {
@@ -262,6 +310,15 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
             isManageMode={isManageMode}
             isSelected={selectedIds.has(block.id)}
             onToggleSelect={() => toggleSelection(block.id)}
+            isHighlighted={highlightedBlockId === block.id}
+            // Edit props
+            isEditing={editingBlockId === block.id}
+            onStartEdit={handleStartEdit}
+            onCancelEdit={handleCancelEdit}
+            onSaveEdit={handleSaveEdit}
+            editData={editFormData}
+            setEditData={setEditFormData}
+            availableTags={tags}
           />
         ))}
         {filteredBlocks.length === 0 && (
@@ -300,7 +357,6 @@ const SortableTagItem: React.FC<SortableTagItemProps> = ({ tag, activeTag, setAc
   };
 
   const handleClick = () => {
-      // dnd-kit handles click vs drag distinction automatically
       setActiveTag(tag === activeTag ? null : tag);
   };
 
@@ -318,13 +374,11 @@ const SortableTagItem: React.FC<SortableTagItemProps> = ({ tag, activeTag, setAc
         } ${isDragging ? 'opacity-50' : ''}`}
     >
       <span className="truncate max-w-[100px]">{tag}</span>
-      {/* Visual hint for dragging */}
       <GripHorizontal className={`w-2.5 h-2.5 opacity-0 group-hover:opacity-50 ${tag === activeTag ? 'text-white' : 'text-zinc-500'}`} />
     </div>
   );
 };
 
-// Sub-component for Draggable Item
 interface DraggableLibraryItemProps {
   block: PromptBlock;
   onDelete: (id: string, e: React.MouseEvent) => void;
@@ -332,6 +386,15 @@ interface DraggableLibraryItemProps {
   isManageMode: boolean;
   isSelected: boolean;
   onToggleSelect: () => void;
+  isHighlighted: boolean;
+  // Edit props
+  isEditing: boolean;
+  onStartEdit: (block: PromptBlock, e: React.MouseEvent) => void;
+  onCancelEdit: () => void;
+  onSaveEdit: (e: React.MouseEvent) => void;
+  editData: { name: string; tag: string; content: string };
+  setEditData: React.Dispatch<React.SetStateAction<{ name: string; tag: string; content: string }>>;
+  availableTags: string[];
 }
 
 const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({ 
@@ -340,7 +403,15 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
   isUsed,
   isManageMode,
   isSelected,
-  onToggleSelect
+  onToggleSelect,
+  isHighlighted,
+  isEditing,
+  onStartEdit,
+  onCancelEdit,
+  onSaveEdit,
+  editData,
+  setEditData,
+  availableTags
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `lib-${block.id}`,
@@ -348,7 +419,7 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
       type: 'library-item',
       block 
     },
-    disabled: isManageMode // Disable drag in manage mode
+    disabled: isManageMode || isEditing // Disable drag in manage or edit mode
   });
 
   const style = transform ? {
@@ -365,41 +436,106 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
       }
   };
 
+  if (isEditing) {
+    return (
+      <div 
+        ref={setNodeRef}
+        style={style}
+        className="border p-3 rounded-lg bg-zinc-950 border-indigo-500 ring-1 ring-indigo-500 relative z-20 space-y-2 shadow-lg"
+      >
+        <div className="flex gap-2">
+            <div className="relative w-1/3 min-w-[80px]">
+                <input 
+                    value={editData.tag}
+                    onChange={(e) => setEditData({...editData, tag: e.target.value})}
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-indigo-300 focus:outline-none focus:border-indigo-500"
+                    placeholder="Tag"
+                    list="edit-tag-suggestions"
+                />
+                <datalist id="edit-tag-suggestions">
+                    {availableTags.map(t => <option key={t} value={t} />)}
+                </datalist>
+            </div>
+            <input 
+                value={editData.name}
+                onChange={(e) => setEditData({...editData, name: e.target.value})}
+                className="flex-1 bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500 font-medium"
+                placeholder="Block Name"
+            />
+        </div>
+        <textarea 
+            value={editData.content}
+            onChange={(e) => setEditData({...editData, content: e.target.value})}
+            className="w-full bg-zinc-900 border border-zinc-700 rounded px-2 py-1.5 text-xs text-zinc-300 font-mono leading-relaxed focus:outline-none focus:border-indigo-500 resize-none h-24"
+            placeholder="Content..."
+        />
+        <div className="flex justify-end gap-2 pt-1 border-t border-zinc-800/50">
+            <button 
+                onClick={onCancelEdit}
+                className="p-1.5 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded transition-colors"
+                title="Cancel"
+            >
+                <X className="w-4 h-4" />
+            </button>
+            <button 
+                onClick={onSaveEdit}
+                className="p-1.5 text-white bg-indigo-600 hover:bg-indigo-500 rounded transition-colors shadow-lg shadow-indigo-900/20"
+                title="Save"
+            >
+                <Check className="w-4 h-4" />
+            </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div 
+      id={`lib-item-${block.id}`}
       ref={setNodeRef} 
       style={style} 
       {...listeners} 
       {...attributes}
       onClick={handleClick}
-      className={`group border p-3 rounded-lg transition-all relative select-none 
+      className={`group border p-3 rounded-lg transition-all duration-300 relative select-none 
         ${!isManageMode ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'}
         ${isDragging ? 'shadow-2xl ring-2 ring-indigo-500 z-50' : ''}
-        ${isUsed && !isManageMode
+        ${isHighlighted ? 'ring-2 ring-cyan-400 bg-zinc-800 scale-105 shadow-[0_0_15px_rgba(34,211,238,0.3)] z-10' : ''}
+        ${!isHighlighted && isUsed && !isManageMode
             ? 'bg-zinc-800 border-indigo-500/30 shadow-[0_0_10px_rgba(99,102,241,0.1)]' 
-            : 'bg-zinc-950 border-zinc-800 hover:border-indigo-500/50 hover:bg-zinc-900'
+            : !isHighlighted && 'bg-zinc-950 border-zinc-800 hover:border-indigo-500/50 hover:bg-zinc-900'
         }
         ${isSelected ? 'bg-indigo-900/10 border-indigo-500 ring-1 ring-indigo-500' : ''}
       `}
     >
       <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2 overflow-hidden">
+        <div className="flex items-center gap-2 overflow-hidden flex-1 min-w-0">
           <span className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded border uppercase tracking-wider ${isUsed && !isManageMode ? 'bg-indigo-900/30 text-indigo-300 border-indigo-800' : 'bg-zinc-800 text-zinc-400 border-zinc-700'}`}>{block.tag}</span>
           <span className={`text-sm font-medium truncate ${isUsed && !isManageMode ? 'text-indigo-200' : 'text-zinc-200'}`}>{block.name}</span>
           {isUsed && !isManageMode && <Check className="w-3.5 h-3.5 text-indigo-400 ml-1 animate-in fade-in zoom-in" />}
         </div>
         
         {isManageMode ? (
-             <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-zinc-600 bg-zinc-900'}`}>
+             <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors shrink-0 ml-2 ${isSelected ? 'bg-indigo-600 border-indigo-600' : 'border-zinc-600 bg-zinc-900'}`}>
                 {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
              </div>
         ) : (
-            <button 
-            onClick={(e) => onDelete(block.id, e)}
-            className="opacity-0 group-hover:opacity-100 ml-2 text-zinc-600 hover:text-red-400 transition-opacity"
-            >
-            <Trash2 className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
+                <button 
+                onClick={(e) => onStartEdit(block, e)}
+                className="p-1 text-zinc-500 hover:text-indigo-400 transition-colors mr-0.5"
+                title="Edit"
+                >
+                <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                onClick={(e) => onDelete(block.id, e)}
+                className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
+                title="Delete"
+                >
+                <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            </div>
         )}
       </div>
       <p className={`text-xs line-clamp-2 font-mono leading-relaxed p-1.5 rounded ${isUsed && !isManageMode ? 'bg-black/40 text-zinc-400' : 'bg-black/20 text-zinc-500'}`}>

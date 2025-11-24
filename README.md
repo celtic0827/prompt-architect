@@ -11,7 +11,7 @@
 <br/>
 <br/>
 
-[![React](https://img.shields.io/badge/React-19-61DAFB?logo=react&style=flat-square)](https://react.dev/)
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&style=flat-square)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript&style=flat-square)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css&style=flat-square)](https://tailwindcss.com/)
 [![Node.js](https://img.shields.io/badge/Node.js-v18+-339933?logo=node.js&style=flat-square)](https://nodejs.org/)
@@ -32,12 +32,14 @@ Manage your prompt library with tags, assemble complex prompts like building blo
 ### ✨ Key Features
 
 *   **🧩 Visual Block Builder:** Construct prompts intuitively by dragging blocks from your library to the canvas. Sort, reorder, and tweak with ease.
+*   **✏️ In-Place Editing:** Directly edit block content in the Builder or Library. Tweak weights (e.g., `(keyword:1.2)`) on the fly without altering your original library.
 *   **📂 Smart Library Management:** Organize thousands of prompt fragments using a **Tag System** (e.g., Subject, Style, Lighting). Supports **Bulk Management** mode for efficient cleanup.
 *   **🪄 Auto-Generate (Magic Wand):** Stuck on ideas? The "Auto" feature randomly selects blocks based on your customized Tag Order to create unique, coherent prompts instantly.
+*   **🌐 Translation Assistant:** Built-in bilingual translation (Powered by MyMemory). Verify prompt meanings (En → Zh) or convert your ideas into English prompts (Zh → En) directly within the app.
+*   **💾 Local Storage Persistence:** Your data is automatically saved to your browser. Close the tab or refresh without losing your work. No account required.
 *   **🏷️ Tag-Based Sorting:** Define a logical order for your tags (e.g., Subject → Style → Camera) and sort your final prompt with one click to ensure optimal AI interpretation.
 *   **💾 Data Portability:** Full support for **CSV Import/Export**. Backup your library or share curated prompt packs with the community.
 *   **🌐 Bilingual Interface:** Native support for **English** and **Traditional Chinese** (繁體中文), switchable instantly within the UI.
-*   **🌑 Cyber-Dark Aesthetics:** A sleek, distraction-free dark interface optimized for long creative sessions.
 
 ### ⚡ One-Click Deployment
 
@@ -79,12 +81,14 @@ Before you begin, ensure you have met the following requirements:
 ### ✨ 核心功能
 
 *   **🧩 可視化積木構建:** 從左側庫拖曳區塊至右側畫布，直觀地組裝 Prompt。支援自由排序、刪除與調整。
+*   **✏️ 即時編輯與權重調整:** 支援在構建區直接修改內容（例如增加權重 `(keyword:1.2)`），或在庫中修正錯字，無需刪除重建。
 *   **📂 智慧庫管理:** 透過**標籤系統 (Tag)** 分類管理成千上萬的提示詞碎片（如：主體、畫風、光影）。內建**批量管理模式**，選取與刪除更高效。
 *   **🪄 自動組裝 (魔法棒):** 缺乏靈感？點擊「自動 (Auto)」按鈕，系統將依照您設定的標籤順序，隨機抽取區塊組合成全新的 Prompt。
+*   **🌐 翻譯助手:** 內建雙向翻譯功能。遇到瓶頸時，可用中文輸入靈感並轉為英文 Prompt，或將現有 Prompt 翻譯回中文以檢查語意。
+*   **💾 自動存檔:** 所有數據自動保存於瀏覽器 (Local Storage)，無需註冊帳號，關閉網頁或重新整理都不會遺失進度。
 *   **🏷️ 標籤邏輯排序:** 自定義標籤的權重順序（例如：主體 → 畫風 → 鏡頭），一鍵將構建區的提示詞依此邏輯重新排列，優化 AI 繪圖權重。
 *   **💾 數據導入導出:** 完整支援 **CSV 格式導入與導出**。輕鬆備份您的資料庫，或與社群分享您的專屬提示詞包。
 *   **🌐 雙語介面:** 內建**英文**與**繁體中文**介面，點擊頂部按鈕即可即時切換。
-*   **🌑 賽博暗色風格:** 專為創作者設計的沉浸式暗色調介面 (Dark Mode)，長時間使用舒適不刺眼。
 
 ### ⚡ 一鍵免費部署
 

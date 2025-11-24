@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'zh';
 
 export const TRANSLATIONS = {
@@ -33,6 +34,13 @@ export const TRANSLATIONS = {
     finalOutput: "Final Output",
     copyPrompt: "Copy Prompt",
     copied: "Copied!",
+
+    // Translation
+    translate: "Translate",
+    translateModalTitle: "Translation Assistant",
+    verifyMeaning: "Verify Meaning (En -> Zh)",
+    translating: "Translating...",
+    close: "Close"
   },
   zh: {
     library: "提示詞庫",
@@ -66,5 +74,12 @@ export const TRANSLATIONS = {
     finalOutput: "最終輸出",
     copyPrompt: "複製提示詞",
     copied: "已複製！",
+
+    // Translation
+    translate: "翻譯助手",
+    translateModalTitle: "翻譯與靈感助手",
+    verifyMeaning: "驗證語意 (英 -> 中)",
+    translating: "翻譯中...",
+    close: "關閉"
   }
 };

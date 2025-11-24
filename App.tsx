@@ -52,6 +52,10 @@ const App: React.FC = () => {
   const [builderBlocks, setBuilderBlocks] = useState<BuilderBlock[]>([]);
   const [activeDragItem, setActiveDragItem] = useState<PromptBlock | null>(null);
   
+  // Library Navigation State (Lifted from LibraryPanel)
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+  const [highlightedLibraryId, setHighlightedLibraryId] = useState<string | null>(null);
+
   // Language State
   const [language, setLanguage] = useState<Language>('en');
   const t = TRANSLATIONS[language];
@@ -205,6 +209,15 @@ const App: React.FC = () => {
     setBuilderBlocks(newBlocks);
   };
 
+  const handleBuilderBlockClick = (originalId: string, tag: string) => {
+    setActiveTag(tag);
+    setHighlightedLibraryId(originalId);
+    // Clear highlight after animation duration (reduced to 1000ms for better feel)
+    setTimeout(() => {
+        setHighlightedLibraryId(null);
+    }, 1000);
+  };
+
   const dropAnimation: DropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
@@ -234,6 +247,9 @@ const App: React.FC = () => {
             language={language}
             setLanguage={setLanguage}
             t={t}
+            activeTag={activeTag}
+            setActiveTag={setActiveTag}
+            highlightedBlockId={highlightedLibraryId}
           />
         </div>
 
@@ -244,6 +260,7 @@ const App: React.FC = () => {
             setBlocks={setBuilderBlocks} 
             tagOrder={tagOrder}
             onAutoGenerate={handleAutoGenerate}
+            onBlockClick={handleBuilderBlockClick}
             t={t}
           />
         </div>
@@ -268,6 +285,7 @@ const BuilderDropArea = (props: {
   setBlocks: React.Dispatch<React.SetStateAction<BuilderBlock[]>>, 
   tagOrder: string[],
   onAutoGenerate: () => void,
+  onBlockClick: (id: string, tag: string) => void,
   t: typeof TRANSLATIONS.en
 }) => {
   const { setNodeRef: setDropRef } = useDroppable({

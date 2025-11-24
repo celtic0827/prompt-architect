@@ -27,7 +27,7 @@ export const BuilderPanel: React.FC<BuilderPanelProps> = ({
   tagOrder, 
   onAutoGenerate, 
   onBlockClick, 
-  onRemoveBlock,
+  onRemoveBlock, 
   onClearBlocks,
   t 
 }) => {
@@ -144,7 +144,7 @@ export const BuilderPanel: React.FC<BuilderPanelProps> = ({
           </div>
         ) : (
           <SortableContext items={blocks.map(b => b.instanceId)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-3 max-w-3xl mx-auto pb-20">
+            <div className="space-y-3 max-w-6xl mx-auto pb-20">
               {blocks.map(block => (
                 <SortableItem 
                   key={block.instanceId} 
@@ -291,7 +291,12 @@ const SortableItem: React.FC<SortableItemProps> = ({ block, onRemove, onUpdate, 
   };
   
   useEffect(() => {
-    adjustHeight();
+    // Small delay to ensure DOM is fully rendered before calculating scrollHeight
+    // This fixes issue where new blocks are added with collapsed height
+    const timer = setTimeout(() => {
+        adjustHeight();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [block.content]);
 
   const handleContainerClick = (e: React.MouseEvent) => {

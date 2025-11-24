@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { useDraggable } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
@@ -15,10 +16,12 @@ interface LibraryPanelProps {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: typeof TRANSLATIONS.en;
-  // Lifted props
   activeTag: string | null;
   setActiveTag: (tag: string | null) => void;
   highlightedBlockId: string | null;
+  // New Delete Handlers
+  onDeleteBlock: (id: string) => void;
+  onBulkDeleteBlocks: (ids: Set<string>) => void;
 }
 
 export const LibraryPanel: React.FC<LibraryPanelProps> = ({ 
@@ -31,7 +34,9 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   t,
   activeTag,
   setActiveTag,
-  highlightedBlockId
+  highlightedBlockId,
+  onDeleteBlock,
+  onBulkDeleteBlocks
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -49,7 +54,6 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState({ name: '', tag: '', content: '' });
 
-  // Scroll to highlighted block when ID changes
   useEffect(() => {
     if (highlightedBlockId) {
       const timer = setTimeout(() => {
@@ -86,18 +90,15 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
     setShowAddForm(false);
   };
 
-  const handleDeleteBlock = (id: string, e: React.MouseEvent) => {
+  const handleDeleteClick = (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if(confirm(t.deleteConfirm)) {
-      setBlocks(prev => prev.filter(b => b.id !== id));
-    }
+    onDeleteBlock(id);
   };
 
   const handleStartEdit = (block: PromptBlock, e: React.MouseEvent) => {
     e.stopPropagation();
     setEditingBlockId(block.id);
     setEditFormData({ name: block.name, tag: block.tag, content: block.content });
-    // Disable drag while editing happens in the component below
   };
 
   const handleCancelEdit = () => {
@@ -131,12 +132,11 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
     e.target.value = '';
   };
 
-  // Management Logic
   const toggleManageMode = () => {
     setIsManageMode(!isManageMode);
-    setSelectedIds(new Set()); // Clear selections when toggling
+    setSelectedIds(new Set());
     setShowAddForm(false);
-    setEditingBlockId(null); // Clear edit mode if active
+    setEditingBlockId(null);
   };
 
   const toggleSelection = (id: string) => {
@@ -151,11 +151,12 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
 
   const handleBulkDelete = () => {
     if (selectedIds.size === 0) return;
-    if (confirm(t.bulkDeleteConfirm.replace('{n}', selectedIds.size.toString()))) {
-      setBlocks(prev => prev.filter(b => !selectedIds.has(b.id)));
-      setSelectedIds(new Set());
-      setIsManageMode(false);
-    }
+    // Call app-level handler for Undo support
+    onBulkDeleteBlocks(selectedIds);
+    
+    // Clear selection and mode
+    setSelectedIds(new Set());
+    setIsManageMode(false);
   };
 
   return (
@@ -305,13 +306,12 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
           <DraggableLibraryItem 
             key={block.id} 
             block={block} 
-            onDelete={handleDeleteBlock} 
+            onDelete={handleDeleteClick} 
             isUsed={usedBlockIds.has(block.id)}
             isManageMode={isManageMode}
             isSelected={selectedIds.has(block.id)}
             onToggleSelect={() => toggleSelection(block.id)}
             isHighlighted={highlightedBlockId === block.id}
-            // Edit props
             isEditing={editingBlockId === block.id}
             onStartEdit={handleStartEdit}
             onCancelEdit={handleCancelEdit}
@@ -387,7 +387,6 @@ interface DraggableLibraryItemProps {
   isSelected: boolean;
   onToggleSelect: () => void;
   isHighlighted: boolean;
-  // Edit props
   isEditing: boolean;
   onStartEdit: (block: PromptBlock, e: React.MouseEvent) => void;
   onCancelEdit: () => void;
@@ -419,7 +418,7 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
       type: 'library-item',
       block 
     },
-    disabled: isManageMode || isEditing // Disable drag in manage or edit mode
+    disabled: isManageMode || isEditing
   });
 
   const style = transform ? {
@@ -523,6 +522,8 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
             <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2 shrink-0">
                 <button 
                 onClick={(e) => onStartEdit(block, e)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="p-1 text-zinc-500 hover:text-indigo-400 transition-colors mr-0.5"
                 title="Edit"
                 >
@@ -530,6 +531,8 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
                 </button>
                 <button 
                 onClick={(e) => onDelete(block.id, e)}
+                onPointerDown={(e) => e.stopPropagation()}
+                onMouseDown={(e) => e.stopPropagation()}
                 className="p-1 text-zinc-500 hover:text-red-400 transition-colors"
                 title="Delete"
                 >

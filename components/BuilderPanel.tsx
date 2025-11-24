@@ -15,10 +15,22 @@ interface BuilderPanelProps {
   tagOrder: string[];
   onAutoGenerate: () => void;
   onBlockClick: (originalId: string, tag: string) => void;
+  // New Delete Handlers
+  onRemoveBlock: (instanceId: string) => void;
+  onClearBlocks: () => void;
   t: typeof TRANSLATIONS.en;
 }
 
-export const BuilderPanel: React.FC<BuilderPanelProps> = ({ blocks, setBlocks, tagOrder, onAutoGenerate, onBlockClick, t }) => {
+export const BuilderPanel: React.FC<BuilderPanelProps> = ({ 
+  blocks, 
+  setBlocks, 
+  tagOrder, 
+  onAutoGenerate, 
+  onBlockClick, 
+  onRemoveBlock,
+  onClearBlocks,
+  t 
+}) => {
   
   const finalPrompt = blocks.map(b => b.content).filter(Boolean).join(', ');
   
@@ -39,12 +51,11 @@ export const BuilderPanel: React.FC<BuilderPanelProps> = ({ blocks, setBlocks, t
   };
 
   const handleClear = () => {
-    // Removed confirm dialog to fix potential sandbox blocking issues
-    setBlocks([]);
+    onClearBlocks();
   };
 
   const removeBlock = (instanceId: string) => {
-    setBlocks(prev => prev.filter(b => b.instanceId !== instanceId));
+    onRemoveBlock(instanceId);
   };
 
   const updateBlockContent = (instanceId: string, newContent: string) => {

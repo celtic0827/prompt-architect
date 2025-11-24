@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   DndContext, 
@@ -14,6 +15,7 @@ import {
   useDroppable
 } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { Undo2 } from 'lucide-react';
 import { LibraryPanel } from './components/LibraryPanel';
 import { BuilderPanel } from './components/BuilderPanel';
 import { PromptBlock, BuilderBlock } from './types';
@@ -24,6 +26,11 @@ const STORAGE_KEYS = {
   BLOCKS: 'prompt-architect-blocks',
   TAGS: 'prompt-architect-tags'
 };
+
+// Define Undo Snapshot Types
+type UndoSnapshot = 
+  | { type: 'library'; data: PromptBlock[] }
+  | { type: 'builder'; data: BuilderBlock[] };
 
 const App: React.FC = () => {
   // Initialize from LocalStorage or use defaults
@@ -41,7 +48,6 @@ const App: React.FC = () => {
   const [tagOrder, setTagOrder] = useState<string[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.TAGS);
-      // Ensure we have a sensible default if storage is empty
       const defaultTags = ['Subject', 'Style', 'View', 'Lighting', 'Quality'];
       return saved ? JSON.parse(saved) : defaultTags;
     } catch (e) {
@@ -52,13 +58,18 @@ const App: React.FC = () => {
   const [builderBlocks, setBuilderBlocks] = useState<BuilderBlock[]>([]);
   const [activeDragItem, setActiveDragItem] = useState<PromptBlock | null>(null);
   
-  // Library Navigation State (Lifted from LibraryPanel)
+  // Library Navigation State
   const [activeTag, setActiveTag] = useState<string | null>(null);
   const [highlightedLibraryId, setHighlightedLibraryId] = useState<string | null>(null);
 
   // Language State
   const [language, setLanguage] = useState<Language>('en');
   const t = TRANSLATIONS[language];
+
+  // Undo / Toast State
+  const [undoSnapshot, setUndoSnapshot] = useState<UndoSnapshot | null>(null);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
 
   // Persistence Effects
   useEffect(() => {
@@ -77,30 +88,19 @@ const App: React.FC = () => {
     }
   }, [tagOrder]);
 
-  // Sync tagOrder with blocks whenever libraryBlocks changes (add new tags found in blocks)
+  // Sync tagOrder with blocks
   useEffect(() => {
     setTagOrder(prevOrder => {
       const currentUniqueTags = Array.from(new Set(libraryBlocks.map(b => b.tag))).sort();
-      
-      // 1. Keep existing tags that are still present, preserving their order
       const preservedOrder = prevOrder.filter(t => currentUniqueTags.includes(t));
-      
-      // 2. Find any new tags that aren't in the previous order
       const newTags = currentUniqueTags.filter(t => !prevOrder.includes(t));
-      
-      // 3. Combine: Old Order (filtered) + New Tags
       const finalOrder = [...preservedOrder, ...newTags];
       
-      // Simple check to prevent unnecessary state updates if identical
-      if (JSON.stringify(finalOrder) === JSON.stringify(prevOrder)) {
-        return prevOrder;
-      }
-      
+      if (JSON.stringify(finalOrder) === JSON.stringify(prevOrder)) return prevOrder;
       return finalOrder;
     });
   }, [libraryBlocks]);
 
-  // Memoize the set of IDs currently in the builder for quick lookup
   const usedBlockIds = useMemo(() => {
     return new Set(builderBlocks.map(b => b.id));
   }, [builderBlocks]);
@@ -108,35 +108,78 @@ const App: React.FC = () => {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 5, // Prevent accidental drags when clicking
+        distance: 5,
       },
     })
   );
 
+  // --- Undo / Toast Logic ---
+  const triggerToast = (msg: string, snapshot: UndoSnapshot) => {
+    setUndoSnapshot(snapshot);
+    setToastMessage(msg);
+    setShowToast(true);
+    // Auto hide after 5 seconds
+    const timer = setTimeout(() => setShowToast(false), 5000);
+    return () => clearTimeout(timer);
+  };
+
+  const handleUndo = () => {
+    if (!undoSnapshot) return;
+    
+    if (undoSnapshot.type === 'library') {
+      setLibraryBlocks(undoSnapshot.data);
+    } else if (undoSnapshot.type === 'builder') {
+      setBuilderBlocks(undoSnapshot.data);
+    }
+    
+    setShowToast(false);
+    setUndoSnapshot(null);
+  };
+
+  // --- Deletion Handlers (Passed to children) ---
+  
+  const handleDeleteLibraryBlock = (id: string) => {
+    triggerToast(t.deleted, { type: 'library', data: [...libraryBlocks] });
+    setLibraryBlocks(prev => prev.filter(b => b.id !== id));
+  };
+
+  const handleBulkDeleteLibraryBlocks = (ids: Set<string>) => {
+    triggerToast(t.deleted, { type: 'library', data: [...libraryBlocks] });
+    setLibraryBlocks(prev => prev.filter(b => !ids.has(b.id)));
+  };
+
+  const handleRemoveBuilderBlock = (instanceId: string) => {
+    triggerToast(t.deleted, { type: 'builder', data: [...builderBlocks] });
+    setBuilderBlocks(prev => prev.filter(b => b.instanceId !== instanceId));
+  };
+
+  const handleClearBuilder = () => {
+    if (builderBlocks.length === 0) return;
+    triggerToast(t.deleted, { type: 'builder', data: [...builderBlocks] });
+    setBuilderBlocks([]);
+  };
+
+  // --- Drag Handlers ---
+
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const activeData = active.data.current;
-    
     if (activeData?.type === 'library-item') {
       setActiveDragItem(activeData.block as PromptBlock);
     }
   };
 
-  const handleDragOver = (event: DragOverEvent) => {
-    // No complex nested sorting logic required here currently
-  };
+  const handleDragOver = (event: DragOverEvent) => {};
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     setActiveDragItem(null);
-
     if (!over) return;
 
     const activeId = active.id;
     const overId = over.id;
     const activeType = active.data.current?.type;
 
-    // 1. Tag Reordering in Library Panel
     if (activeType === 'tag' && activeId !== overId) {
       setTagOrder((items) => {
         const oldIndex = items.indexOf(activeId as string);
@@ -146,17 +189,12 @@ const App: React.FC = () => {
       return;
     }
 
-    // 2. Dropping from Library to Builder
     const isLibraryItem = activeType === 'library-item';
     const isOverBuilderContext = typeof overId === 'string' && (builderBlocks.some(b => b.instanceId === overId) || overId === 'builder-area');
 
     if (isLibraryItem && isOverBuilderContext) {
        const block = active.data.current?.block as PromptBlock;
-
-       // Prevent duplicate blocks
-       if (builderBlocks.some(b => b.id === block.id)) {
-         return;
-       }
+       if (builderBlocks.some(b => b.id === block.id)) return;
 
        const newBlock: BuilderBlock = {
          ...block,
@@ -164,20 +202,17 @@ const App: React.FC = () => {
        };
        
        setBuilderBlocks((prev) => {
-         // If dropped over a specific item, insert at that index
          const overIndex = prev.findIndex(b => b.instanceId === overId);
          if (overIndex >= 0) {
            const newItems = [...prev];
            newItems.splice(overIndex, 0, newBlock);
            return newItems;
          }
-         // Otherwise append
          return [...prev, newBlock];
        });
        return;
     }
 
-    // 3. Reordering within Builder
     if (!isLibraryItem && activeId !== overId && activeType !== 'tag') {
       setBuilderBlocks((items) => {
         const oldIndex = items.findIndex((item) => item.instanceId === activeId);
@@ -188,31 +223,27 @@ const App: React.FC = () => {
   };
 
   const handleAutoGenerate = () => {
-    const newBlocks: BuilderBlock[] = [];
+    // Snapshot current builder state before auto-gen? 
+    // Usually 'Auto' is destructive, let's treat it like a Clear+Add, so we save state.
+    triggerToast(t.auto, { type: 'builder', data: [...builderBlocks] });
     
-    // Iterate through tags in current sort order
+    const newBlocks: BuilderBlock[] = [];
     tagOrder.forEach(tag => {
-      // Find all library blocks matching this tag
       const candidates = libraryBlocks.filter(b => b.tag === tag);
-      
       if (candidates.length > 0) {
-        // Pick one random block
         const randomBlock = candidates[Math.floor(Math.random() * candidates.length)];
-        
         newBlocks.push({
           ...randomBlock,
           instanceId: `${randomBlock.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
         });
       }
     });
-
     setBuilderBlocks(newBlocks);
   };
 
   const handleBuilderBlockClick = (originalId: string, tag: string) => {
     setActiveTag(tag);
     setHighlightedLibraryId(originalId);
-    // Clear highlight after animation duration (reduced to 1000ms for better feel)
     setTimeout(() => {
         setHighlightedLibraryId(null);
     }, 1000);
@@ -221,9 +252,7 @@ const App: React.FC = () => {
   const dropAnimation: DropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
       styles: {
-        active: {
-          opacity: '0.5',
-        },
+        active: { opacity: '0.5' },
       },
     }),
   };
@@ -236,7 +265,7 @@ const App: React.FC = () => {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-black text-zinc-100 overflow-hidden font-sans">
+      <div className="flex h-screen bg-black text-zinc-100 overflow-hidden font-sans relative">
         {/* Left Panel: Library */}
         <div className="w-full md:w-[400px] lg:w-[450px] flex-shrink-0 relative z-20 shadow-2xl">
           <LibraryPanel 
@@ -250,6 +279,8 @@ const App: React.FC = () => {
             activeTag={activeTag}
             setActiveTag={setActiveTag}
             highlightedBlockId={highlightedLibraryId}
+            onDeleteBlock={handleDeleteLibraryBlock}
+            onBulkDeleteBlocks={handleBulkDeleteLibraryBlocks}
           />
         </div>
 
@@ -261,9 +292,26 @@ const App: React.FC = () => {
             tagOrder={tagOrder}
             onAutoGenerate={handleAutoGenerate}
             onBlockClick={handleBuilderBlockClick}
+            onRemoveBlock={handleRemoveBuilderBlock}
+            onClearBlocks={handleClearBuilder}
             t={t}
           />
         </div>
+
+        {/* Toast Notification */}
+        <div className={`fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+          <div className="bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-4 min-w-[300px] justify-between">
+            <span className="text-sm font-medium">{toastMessage}</span>
+            <button 
+              onClick={handleUndo}
+              className="text-indigo-400 hover:text-indigo-300 text-sm font-bold uppercase tracking-wide flex items-center gap-1.5 transition-colors"
+            >
+              <Undo2 className="w-4 h-4" />
+              {t.undo}
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* Drag Overlay */}
@@ -279,13 +327,14 @@ const App: React.FC = () => {
   );
 };
 
-// Wrapper for the builder panel to make the whole area droppable
 const BuilderDropArea = (props: { 
   blocks: BuilderBlock[], 
   setBlocks: React.Dispatch<React.SetStateAction<BuilderBlock[]>>, 
   tagOrder: string[],
   onAutoGenerate: () => void,
   onBlockClick: (id: string, tag: string) => void,
+  onRemoveBlock: (id: string) => void,
+  onClearBlocks: () => void,
   t: typeof TRANSLATIONS.en
 }) => {
   const { setNodeRef: setDropRef } = useDroppable({

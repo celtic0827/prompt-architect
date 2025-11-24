@@ -40,7 +40,12 @@ export const TRANSLATIONS = {
     translateModalTitle: "Translation Assistant",
     verifyMeaning: "Verify Meaning (En -> Zh)",
     translating: "Translating...",
-    close: "Close"
+    close: "Close",
+
+    // Undo / Toast
+    deleted: "Deleted.",
+    undo: "Undo",
+    restored: "Restored."
   },
   zh: {
     library: "提示詞庫",
@@ -80,6 +85,11 @@ export const TRANSLATIONS = {
     translateModalTitle: "翻譯與靈感助手",
     verifyMeaning: "驗證語意 (英 -> 中)",
     translating: "翻譯中...",
-    close: "關閉"
+    close: "關閉",
+
+    // Undo / Toast
+    deleted: "已刪除。",
+    undo: "復原",
+    restored: "已復原。"
   }
 };

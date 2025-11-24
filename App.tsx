@@ -291,9 +291,12 @@ const App: React.FC = () => {
       <div className="flex flex-col md:flex-row h-[100dvh] bg-black text-zinc-100 overflow-hidden font-sans relative">
         
         {/* Left Panel: Library */}
+        {/* Added pb-[calc(4rem+env(safe-area-inset-bottom))] to ensure content isn't hidden behind fixed nav on mobile */}
+        {/* Updated Desktop width to 450px as requested */}
         <div className={`
-            w-full md:w-[400px] lg:w-[450px] flex-shrink-0 relative z-20 shadow-2xl bg-zinc-900 border-r border-zinc-800
-            ${activeMobileTab === 'library' ? 'flex-1 flex overflow-hidden' : 'hidden md:flex'}
+            w-full md:w-[450px] flex-shrink-0 relative z-20 shadow-2xl bg-zinc-900 border-r border-zinc-800
+            ${activeMobileTab === 'library' ? 'flex-1 flex overflow-hidden pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0' : 'hidden md:flex'}
+            md:flex-none
         `}>
           <LibraryPanel 
             blocks={libraryBlocks} 
@@ -313,9 +316,11 @@ const App: React.FC = () => {
         </div>
 
         {/* Right Panel: Builder Area */}
+        {/* Added pb-[calc(4rem+env(safe-area-inset-bottom))] to ensure content isn't hidden behind fixed nav on mobile */}
+        {/* Added h-full to ensure height chain is unbroken on desktop */}
         <div className={`
-            flex-1 relative z-10 min-w-0
-            ${activeMobileTab === 'builder' ? 'flex-1 flex overflow-hidden' : 'hidden md:flex'}
+            flex-1 h-full relative z-10 min-w-0 flex flex-col overflow-hidden
+            ${activeMobileTab === 'builder' ? 'flex pb-[calc(4rem+env(safe-area-inset-bottom))] md:pb-0' : 'hidden md:flex'}
         `}>
           <BuilderDropArea 
             blocks={builderBlocks} 
@@ -329,30 +334,32 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* Mobile Bottom Navigation Bar - Fixed */}
-        <div className="md:hidden fixed bottom-0 left-0 w-full h-16 bg-zinc-950 border-t border-zinc-800 flex items-center justify-around z-50 safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
-           <button 
-             onClick={() => setActiveMobileTab('library')}
-             className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeMobileTab === 'library' ? 'text-indigo-400' : 'text-zinc-500'}`}
-           >
-             <Library className="w-5 h-5" />
-             <span className="text-[10px] font-medium">{t.library}</span>
-           </button>
-           
-           <button 
-             onClick={() => setActiveMobileTab('builder')}
-             className={`flex flex-col items-center justify-center w-full h-full space-y-1 relative ${activeMobileTab === 'builder' ? 'text-indigo-400' : 'text-zinc-500'}`}
-           >
-             <div className="relative">
-                <Layers className="w-5 h-5" />
-                {builderBlocks.length > 0 && (
-                    <span className="absolute -top-1.5 -right-2 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] h-[14px] flex items-center justify-center">
-                        {builderBlocks.length}
-                    </span>
-                )}
-             </div>
-             <span className="text-[10px] font-medium">{t.promptBuilder}</span>
-           </button>
+        {/* Mobile Bottom Navigation Bar - Flex layout with button-level safe area padding */}
+        <div className="md:hidden fixed bottom-0 left-0 w-full bg-zinc-950 border-t border-zinc-800 z-50 shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
+           <div className="flex w-full">
+               <button 
+                 onClick={() => setActiveMobileTab('library')}
+                 className={`flex-1 flex flex-col items-center justify-center pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] active:bg-zinc-900 transition-colors ${activeMobileTab === 'library' ? 'text-indigo-400' : 'text-zinc-500'}`}
+               >
+                 <Library className="w-5 h-5 mb-1" />
+                 <span className="text-[10px] font-medium">{t.library}</span>
+               </button>
+               
+               <button 
+                 onClick={() => setActiveMobileTab('builder')}
+                 className={`flex-1 flex flex-col items-center justify-center pt-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] active:bg-zinc-900 transition-colors relative ${activeMobileTab === 'builder' ? 'text-indigo-400' : 'text-zinc-500'}`}
+               >
+                 <div className="relative">
+                    <Layers className="w-5 h-5 mb-1" />
+                    {builderBlocks.length > 0 && (
+                        <span className="absolute -top-1 -right-2 bg-indigo-600 text-white text-[9px] font-bold px-1 rounded-full min-w-[14px] h-[14px] flex items-center justify-center">
+                            {builderBlocks.length}
+                        </span>
+                    )}
+                 </div>
+                 <span className="text-[10px] font-medium">{t.promptBuilder}</span>
+               </button>
+           </div>
         </div>
 
         {/* Toast Notification */}
@@ -399,7 +406,7 @@ const BuilderDropArea = (props: {
   });
 
   return (
-    <div ref={setDropRef} className="h-full flex flex-col">
+    <div ref={setDropRef} className="h-full w-full flex flex-col">
       <BuilderPanel {...props} />
     </div>
   )

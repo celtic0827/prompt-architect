@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -93,9 +93,9 @@ export const BuilderPanel: React.FC<BuilderPanelProps> = ({
   };
 
   return (
-    <div className="flex flex-col h-full bg-black">
+    <div className="flex flex-col h-full bg-black w-full">
       {/* Header */}
-      <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950 z-10">
+      <div className="p-4 border-b border-zinc-800 flex justify-between items-center bg-zinc-950 z-10 w-full flex-none">
         <h2 className="text-lg font-bold text-zinc-100 flex items-center gap-2">
           <Layers className="w-5 h-5 text-indigo-500" />
           {t.promptBuilder}
@@ -134,17 +134,17 @@ export const BuilderPanel: React.FC<BuilderPanelProps> = ({
         </div>
       </div>
 
-      {/* Sortable Drop Area */}
-      <div className="flex-1 overflow-y-auto p-6 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 to-black scrollbar-thin">
+      {/* Sortable Drop Area - Added min-h-0 to allow scrolling inside flex container */}
+      <div className="flex-1 min-h-0 overflow-y-auto p-4 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 to-black scrollbar-thin w-full overscroll-contain">
         {blocks.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-zinc-700 border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/30">
+          <div className="h-full flex flex-col items-center justify-center text-zinc-700 border-2 border-dashed border-zinc-800 rounded-xl bg-zinc-900/30 w-full">
             <Sparkles className="w-12 h-12 mb-4 opacity-20" />
             <p className="text-sm font-medium">{t.dragHere}</p>
             <p className="text-xs mt-2 opacity-50">{t.dragHint}</p>
           </div>
         ) : (
           <SortableContext items={blocks.map(b => b.instanceId)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-3 max-w-6xl mx-auto pb-20">
+            <div className="space-y-3 w-full pb-20">
               {blocks.map(block => (
                 <SortableItem 
                   key={block.instanceId} 
@@ -159,8 +159,8 @@ export const BuilderPanel: React.FC<BuilderPanelProps> = ({
         )}
       </div>
 
-      {/* Final Output Footer (Sticky) */}
-      <div className="h-1/3 min-h-[200px] bg-zinc-900 border-t border-zinc-800 p-4 shadow-2xl z-10 flex flex-col">
+      {/* Final Output Footer (Sticky) - Fixed height for stability */}
+      <div className="h-[180px] flex-none bg-zinc-900 border-t border-zinc-800 p-4 shadow-2xl z-10 flex flex-col w-full">
         <div className="flex justify-between items-center mb-2">
           <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{t.finalOutput}</span>
           <div className="flex gap-2">
@@ -283,6 +283,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ block, onRemove, onUpdate, 
 
   // Auto-resize textarea
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
   const adjustHeight = () => {
     if (textareaRef.current) {
       textareaRef.current.style.height = 'auto';
@@ -290,13 +291,9 @@ const SortableItem: React.FC<SortableItemProps> = ({ block, onRemove, onUpdate, 
     }
   };
   
-  useEffect(() => {
-    // Small delay to ensure DOM is fully rendered before calculating scrollHeight
-    // This fixes issue where new blocks are added with collapsed height
-    const timer = setTimeout(() => {
-        adjustHeight();
-    }, 0);
-    return () => clearTimeout(timer);
+  // Use useLayoutEffect to adjust height before paint, avoiding jumpy layout
+  useLayoutEffect(() => {
+    adjustHeight();
   }, [block.content]);
 
   const handleContainerClick = (e: React.MouseEvent) => {
@@ -313,7 +310,7 @@ const SortableItem: React.FC<SortableItemProps> = ({ block, onRemove, onUpdate, 
       ref={setNodeRef}
       style={style}
       onClick={handleContainerClick}
-      className={`relative group flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer ${isDragging ? 'bg-indigo-900/20 border-indigo-500 shadow-xl scale-[1.02]' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900'}`}
+      className={`relative group flex items-start gap-3 p-4 rounded-xl border transition-all cursor-pointer w-full ${isDragging ? 'bg-indigo-900/20 border-indigo-500 shadow-xl scale-[1.02]' : 'bg-zinc-950 border-zinc-800 hover:border-zinc-600 hover:bg-zinc-900'}`}
     >
       <div 
         {...attributes} 
@@ -339,14 +336,14 @@ const SortableItem: React.FC<SortableItemProps> = ({ block, onRemove, onUpdate, 
         </div>
         
         {/* Editable Content Area */}
-        <div className="relative group/edit">
+        <div className="relative group/edit w-full">
             <textarea
                 ref={textareaRef}
                 value={block.content}
                 onChange={(e) => onUpdate(e.target.value)}
-                className="w-full bg-transparent border border-transparent hover:border-zinc-800 focus:border-indigo-500 rounded p-1.5 -ml-1.5 text-zinc-300 text-sm font-mono leading-relaxed resize-none focus:outline-none focus:bg-zinc-900 transition-colors overflow-hidden pr-8"
+                className="w-full bg-transparent border border-transparent hover:border-zinc-800 focus:border-indigo-500 rounded p-1.5 -ml-1.5 text-zinc-300 text-sm font-mono leading-relaxed resize-none focus:outline-none focus:bg-zinc-900 transition-colors overflow-hidden pr-8 min-h-[80px]"
                 spellCheck={false}
-                rows={1}
+                rows={3}
             />
             <PencilLine className="w-3 h-3 text-zinc-600 absolute right-2 bottom-2 opacity-0 group-hover/edit:opacity-100 pointer-events-none" />
         </div>

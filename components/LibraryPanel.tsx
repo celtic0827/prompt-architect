@@ -1,10 +1,9 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useDraggable } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X, AlertTriangle, FileInput, CopyPlus, Replace, ChevronRight } from 'lucide-react';
+import { Plus, Minus, Search, Tag, GripVertical, Trash2, FileDown, FileUp, GripHorizontal, Check, Settings2, CheckSquare, Languages, Pencil, X, AlertTriangle, FileInput, CopyPlus, Replace, ChevronRight } from 'lucide-react';
 import { PromptBlock } from '../types';
 import { exportToCSV, parseCSV } from '../utils/csvHelper';
 import { Language, TRANSLATIONS } from '../translations';
@@ -23,6 +22,7 @@ interface LibraryPanelProps {
   onDeleteBlock: (id: string) => void;
   onBulkDeleteBlocks: (ids: Set<string>) => void;
   onAddToBuilder: (block: PromptBlock) => void;
+  onRemoveFromBuilder: (id: string) => void;
 }
 
 export const LibraryPanel: React.FC<LibraryPanelProps> = ({ 
@@ -38,7 +38,8 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
   highlightedBlockId,
   onDeleteBlock,
   onBulkDeleteBlocks,
-  onAddToBuilder
+  onAddToBuilder,
+  onRemoveFromBuilder
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
@@ -234,6 +235,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
                  {selectedIds.size > 0 && (
                     <button 
                       onClick={handleBulkDelete}
+                      onMouseDown={(e) => e.stopPropagation()}
                       className="flex items-center gap-1 px-3 py-1.5 bg-red-900/50 hover:bg-red-900 text-red-300 rounded-lg transition-colors text-xs font-medium border border-red-800"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -343,6 +345,7 @@ export const LibraryPanel: React.FC<LibraryPanelProps> = ({
             setEditData={setEditFormData}
             availableTags={tags}
             onAddToBuilder={() => onAddToBuilder(block)}
+            onRemoveFromBuilder={() => onRemoveFromBuilder(block.id)}
           />
         ))}
         {filteredBlocks.length === 0 && (
@@ -478,6 +481,7 @@ interface DraggableLibraryItemProps {
   setEditData: React.Dispatch<React.SetStateAction<{ name: string; tag: string; content: string }>>;
   availableTags: string[];
   onAddToBuilder: () => void;
+  onRemoveFromBuilder: () => void;
 }
 
 const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({ 
@@ -495,7 +499,8 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
   editData,
   setEditData,
   availableTags,
-  onAddToBuilder
+  onAddToBuilder,
+  onRemoveFromBuilder
 }) => {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: `lib-${block.id}`,
@@ -605,13 +610,22 @@ const DraggableLibraryItem: React.FC<DraggableLibraryItemProps> = ({
              </div>
         ) : (
             <div className="flex items-center shrink-0">
-                {/* Mobile Add Button */}
-                <button
-                    onClick={(e) => { e.stopPropagation(); onAddToBuilder(); }}
-                    className="md:hidden p-1.5 text-emerald-500 hover:bg-emerald-900/20 rounded mr-1"
-                >
-                    <Plus className="w-4 h-4" />
-                </button>
+                {/* Mobile Add/Remove Button */}
+                {isUsed ? (
+                   <button
+                       onClick={(e) => { e.stopPropagation(); onRemoveFromBuilder(); }}
+                       className="md:hidden px-1.5 py-0.5 bg-red-900/30 border border-red-500/30 text-red-400 rounded mr-2 shadow-sm active:bg-red-900/50 active:scale-95 transition-all"
+                   >
+                       <Minus className="w-3.5 h-3.5" />
+                   </button>
+                ) : (
+                   <button
+                       onClick={(e) => { e.stopPropagation(); onAddToBuilder(); }}
+                       className="md:hidden px-1.5 py-0.5 bg-emerald-900/30 border border-emerald-500/30 text-emerald-400 rounded mr-2 shadow-sm active:bg-emerald-900/50 active:scale-95 transition-all"
+                   >
+                       <Plus className="w-3.5 h-3.5" />
+                   </button>
+                )}
 
                 <div className="hidden md:flex items-center opacity-0 group-hover:opacity-100 transition-opacity ml-2">
                     <button 

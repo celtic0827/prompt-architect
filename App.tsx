@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
   DndContext, 
@@ -170,13 +169,23 @@ const App: React.FC = () => {
     setBuilderBlocks([]);
   };
 
-  // --- Direct Add Handler (For Mobile Tap or "+" Button) ---
+  // --- Direct Add/Remove Handlers (For Mobile Tap or "+" Button) ---
   const handleDirectAddToBuilder = (block: PromptBlock) => {
      const newBlock: BuilderBlock = {
        ...block,
        instanceId: `${block.id}-${Date.now()}`
      };
      setBuilderBlocks(prev => [...prev, newBlock]);
+  };
+
+  const handleDirectRemoveFromBuilder = (id: string) => {
+      // Find all instances of this block in the builder
+      const instances = builderBlocks.filter(b => b.id === id);
+      if (instances.length > 0) {
+          // Remove the last instance found (LIFO behavior for toggling)
+          const instanceToRemove = instances[instances.length - 1];
+          handleRemoveBuilderBlock(instanceToRemove.instanceId);
+      }
   };
 
   // --- Drag Handlers ---
@@ -312,6 +321,7 @@ const App: React.FC = () => {
             onDeleteBlock={handleDeleteLibraryBlock}
             onBulkDeleteBlocks={handleBulkDeleteLibraryBlocks}
             onAddToBuilder={handleDirectAddToBuilder}
+            onRemoveFromBuilder={handleDirectRemoveFromBuilder}
           />
         </div>
 
@@ -363,7 +373,8 @@ const App: React.FC = () => {
         </div>
 
         {/* Toast Notification */}
-        <div className={`fixed bottom-20 md:bottom-6 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ${showToast ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0'}`}>
+        {/* Added pointer-events-none when hidden to prevent blocking mobile nav clicks in the center deadzone */}
+        <div className={`fixed bottom-20 md:bottom-6 left-1/2 transform -translate-x-1/2 z-[100] transition-all duration-300 ${showToast ? 'translate-y-0 opacity-100 pointer-events-auto' : 'translate-y-20 opacity-0 pointer-events-none'}`}>
           <div className="bg-zinc-900 border border-zinc-700 text-white px-4 py-3 rounded-lg shadow-2xl flex items-center gap-4 min-w-[300px] justify-between">
             <span className="text-sm font-medium">{toastMessage}</span>
             <button 

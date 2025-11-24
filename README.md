@@ -6,7 +6,7 @@
 <br/>
 
 <!-- Live Demo Button -->
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo_線上試用-Click_Here-10b981?style=for-the-badge&logo=google-chrome&logoColor=white)](https://ai.studio/apps/drive/10hjIwyu56UXgHsC7PKO1ADE2iY4FVIrB)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo_線上試用-Click_Here-10b981?style=for-the-badge&logo=google-chrome&logoColor=white)](https://prompt-architect-xi.vercel.app/)
 
 <br/>
 <br/>

@@ -172,20 +172,11 @@ const App: React.FC = () => {
 
   // --- Direct Add Handler (For Mobile Tap or "+" Button) ---
   const handleDirectAddToBuilder = (block: PromptBlock) => {
-     // Check for duplicate ID if strictly enforcing single use, 
-     // but Builder usually allows duplicates (instances).
-     // However, Library highlighting logic assumes we know if it's used.
-     // Let's allow duplicates in builder, but maybe visual feedback is enough.
-     
      const newBlock: BuilderBlock = {
        ...block,
        instanceId: `${block.id}-${Date.now()}`
      };
      setBuilderBlocks(prev => [...prev, newBlock]);
-     
-     // Optional: Feedback or switch tab on mobile? 
-     // Let's keep user in library so they can add more, but maybe flash a toast?
-     // For now, no auto-switch, allows rapid adding.
   };
 
   // --- Drag Handlers ---
@@ -223,9 +214,6 @@ const App: React.FC = () => {
 
     if (isLibraryItem && isOverBuilderContext) {
        const block = active.data.current?.block as PromptBlock;
-       // Prevent duplicates if desired, or allow instances. 
-       // Current logic allows instances.
-       
        const newBlock: BuilderBlock = {
          ...block,
          instanceId: `${block.id}-${Date.now()}`
@@ -299,8 +287,8 @@ const App: React.FC = () => {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      {/* Main Layout: Flex Col on Mobile, Flex Row on Desktop */}
-      <div className="flex flex-col md:flex-row h-screen bg-black text-zinc-100 overflow-hidden font-sans relative">
+      {/* Main Layout: Flex Col on Mobile, Flex Row on Desktop, fixed height for mobile browsers */}
+      <div className="flex flex-col md:flex-row h-[100dvh] bg-black text-zinc-100 overflow-hidden font-sans relative">
         
         {/* Left Panel: Library */}
         <div className={`
@@ -341,8 +329,8 @@ const App: React.FC = () => {
           />
         </div>
 
-        {/* Mobile Bottom Navigation Bar */}
-        <div className="md:hidden flex-shrink-0 h-16 bg-zinc-950 border-t border-zinc-800 flex items-center justify-around z-50 safe-area-bottom">
+        {/* Mobile Bottom Navigation Bar - Fixed */}
+        <div className="md:hidden fixed bottom-0 left-0 w-full h-16 bg-zinc-950 border-t border-zinc-800 flex items-center justify-around z-50 safe-area-bottom shadow-[0_-5px_20px_rgba(0,0,0,0.5)]">
            <button 
              onClick={() => setActiveMobileTab('library')}
              className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${activeMobileTab === 'library' ? 'text-indigo-400' : 'text-zinc-500'}`}
